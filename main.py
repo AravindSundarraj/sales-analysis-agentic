@@ -5,7 +5,7 @@ import duckdb
 from pydantic import BaseModel, Field
 from IPython.display import Markdown
 
-from helper import get_openai_api_key
+from helper.helper import get_openai_api_key
 
 openai_api_key = get_openai_api_key()
 client = OpenAI(api_key=openai_api_key)

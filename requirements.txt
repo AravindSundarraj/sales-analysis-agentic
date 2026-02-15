@@ -5,3 +5,4 @@ pydantic
 ipython
 python-dotenv
 pyarrow
+dotenv
