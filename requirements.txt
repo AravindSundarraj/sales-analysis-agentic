@@ -6,3 +6,4 @@ ipython
 python-dotenv
 pyarrow
 dotenv
+matplotlib
