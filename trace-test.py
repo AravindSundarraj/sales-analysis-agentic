@@ -61,6 +61,7 @@ def generate_sql_query(prompt: str, columns: list, table_name: str) -> str:
 @tracer.tool()
 def lookup_sales_data(prompt: str) -> str:
     """Implementation of sales data lookup from parquet file using SQL"""
+    print("lookup_sales_data called with prompt:", prompt)
     try:
 
         # define the table name
@@ -72,9 +73,11 @@ def lookup_sales_data(prompt: str) -> str:
 
         # step 2: generate the SQL code
         sql_query = generate_sql_query(prompt, df.columns, table_name)
+        print("Generated SQL query:", sql_query)
         # clean the response to make sure it only includes the SQL code
         sql_query = sql_query.strip()
         sql_query = sql_query.replace("```sql", "").replace("```", "")
+        print("Cleaned SQL query:", sql_query)
 
         with tracer.start_as_current_span(
             "execute_sql_query", 
