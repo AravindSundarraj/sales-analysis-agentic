@@ -89,6 +89,147 @@ print("joined_df:", joined_df)
 # Step 3A: Fetch Portfolio Weights
 # ----------------------------
 
+# Get the portfolio weights
+
+# Look at your portfolio and see how much money is in each asset.
+
+# Example: 40% AAPL, 30% MSFT, 30% bonds.
+
+# This tells us how much each asset affects total risk.
+
+# Get historical or simulated returns
+
+# We imagine how each asset’s price moves every day.
+
+# Since we don’t have real data, we simulate it (random numbers that behave like stock returns).
+
+# This helps us see how the assets fluctuate individually.
+
+# Compute correlations between assets
+
+# Some assets move together (e.g., tech stocks), some move independently (e.g., bonds).
+
+# We calculate how each asset’s ups and downs affect others.
+
+# This is called the covariance matrix — basically a map of relationships between assets.
+
+# Calculate total portfolio risk
+
+# Combine weights and correlations to get one number: the portfolio’s overall volatility (risk).
+
+# Bigger number = more risk, smaller number = less risk.
+
+# We can also convert it to “yearly risk” so it’s easier to interpret.
+
+# 🔹 1. Formula Used in Step 3
+
+# The formula we use is called portfolio variance, which measures total portfolio risk:
+
+# 𝜎
+# 𝑝
+# 2
+# =
+# 𝑤
+# 𝑇
+# Σ
+# 𝑤
+# σ
+# p
+# 2
+# 	​
+
+# =w
+# T
+# Σw
+
+# Where:
+
+# Symbol	Meaning
+
+# 𝑤
+# w	Weight vector of assets (how much money is in each asset)
+
+# Σ
+# Σ	Covariance matrix of asset returns (how assets move together)
+
+# 𝜎
+# 𝑝
+# 2
+# σ
+# p
+# 2
+# 	​
+
+# 	Portfolio variance (total risk squared)
+
+# 𝜎
+# 𝑝
+# σ
+# p
+# 	​
+
+# 	Portfolio volatility = √variance
+
+# Step 3A: Get 
+# 𝑤
+# w (weights) from portfolio
+
+# Step 3B: Simulate or fetch returns → calculate covariance matrix 
+# Σ
+# Σ
+
+# Step 3C: Apply 
+# 𝜎
+# 𝑝
+# 2
+# =
+# 𝑤
+# 𝑇
+# Σ
+# 𝑤
+# σ
+# p
+# 2
+# 	​
+
+# =w
+# T
+# Σw → total variance
+
+# Step 3D: Take √variance → volatility (risk in same units as returns)
+
+# Optional: Annualize volatility: 
+# 𝜎
+# annual
+# =
+# 𝜎
+# daily
+# ×
+# 252
+# σ
+# annual
+# 	​
+
+# =σ
+# daily
+# 	​
+
+# ×
+# 252
+# 	​
+
+
+# 🔹 Why This Formula Works
+
+# Each asset has its own variance (how volatile it is individually).
+
+# Assets are correlated — some move together, some move oppositely.
+
+# Total portfolio variance is weighted sum of all individual variances + covariances.
+
+# In short:
+# It’s the mathematically correct way to combine all asset risks into a single number for the portfolio.
+
 weights_df = con.execute("""
     SELECT asset, weight
     FROM portfolio
@@ -141,3 +282,86 @@ annual_volatility = portfolio_volatility * np.sqrt(252)
 print("Portfolio Variance:", portfolio_variance)
 print("Portfolio Volatility (daily):", portfolio_volatility)
 print("Portfolio Volatility (annualized):", annual_volatility)
+
+# Step 4 — Compare Portfolio Risk vs User Risk Profile
+
+# Goal of Step 4
+
+# We now have:
+
+# ✅ Portfolio annualized volatility (from Step 3)
+
+# ❓ User risk tolerance (e.g., Conservative / Moderate / Aggressive)
+
+# Step 4 answers:
+
+# “Is this portfolio too risky, too safe, or aligned with the user?”
+
+# ----------------------------
+# Step 4 — Compare Risk vs User Profile
+# ----------------------------
+# Step 4 — System Determines Risk Profile (Not User)
+
+# Instead of asking the user “Are you Moderate?”,
+# we simulate user questionnaire inputs and let system classify.
+# Example user inputs
+investment_horizon_years = 12
+income_stability = "High"
+max_drawdown_tolerance = 20  # %
+
+#Step 4B — Deterministic Risk Scoring
+risk_score = 0
+
+# Horizon scoring
+if investment_horizon_years > 15:
+    risk_score += 2
+elif investment_horizon_years > 7:
+    risk_score += 1
+
+# Income stability
+if income_stability == "High":
+    risk_score += 2
+elif income_stability == "Medium":
+    risk_score += 1
+
+# Drawdown tolerance
+if max_drawdown_tolerance >= 30:
+    risk_score += 2
+elif max_drawdown_tolerance >= 15:
+    risk_score += 1
+
+# Step 4C — Map Score to Category
+
+if risk_score <= 2:
+    user_risk_profile = "Conservative"
+elif risk_score <= 4:
+    user_risk_profile = "Moderate"
+else:
+    user_risk_profile = "Aggressive"
+
+print("System Assigned Risk Profile:", user_risk_profile)
+
+
+
+# Risk thresholds (annualized volatility)
+risk_ranges = {
+    "Conservative": (0.00, 0.10),
+    "Moderate": (0.10, 0.20),
+    "Aggressive": (0.20, 0.35)
+}
+
+portfolio_vol = annual_volatility
+
+low, high = risk_ranges[user_risk_profile]
+
+print("User Risk Profile:", user_risk_profile)
+print("Portfolio Annual Volatility:", portfolio_vol)
+
+if portfolio_vol < low:
+    risk_status = "Portfolio is TOO SAFE for the selected risk profile."
+elif portfolio_vol > high:
+    risk_status = "Portfolio is TOO RISKY for the selected risk profile."
+else:
+    risk_status = "Portfolio risk is ALIGNED with the selected profile."
+
+print("Risk Evaluation:", risk_status)
