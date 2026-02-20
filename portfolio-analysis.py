@@ -82,3 +82,62 @@ joined_df = con.execute("""
 
 print("joined_df:", joined_df)
 # Step 3 — Mathematical Portfolio Risk Calculation (Variance Model)
+# Find out how risky your portfolio is — basically, “how much it could go up or down in value” based on your asset mix.
+
+
+# ----------------------------
+# Step 3A: Fetch Portfolio Weights
+# ----------------------------
+
+weights_df = con.execute("""
+    SELECT asset, weight
+    FROM portfolio
+    ORDER BY asset
+""").fetchdf()
+
+assets = weights_df["asset"].values   # list of tickers
+weights = weights_df["weight"].values # numeric weight vector
+
+print("Assets:", assets)
+print("Weights:", weights)
+
+# ----------------------------
+# Step 3B: Simulate Historical Returns
+# ----------------------------
+
+np.random.seed(42)          # for reproducibility
+num_assets = len(assets)
+num_days = 252               # simulate 1 trading year
+
+# simulate daily returns: mean=0.05% daily, std=2% daily
+returns = np.random.normal(
+    loc=0.0005, 
+    scale=0.02, 
+    size=(num_days, num_assets)
+)
+
+returns_df = pd.DataFrame(returns, columns=assets)
+print("Simulated Returns (first 5 rows):")
+print(returns_df.head())
+
+# ----------------------------
+# Step 3C: Compute Covariance Matrix
+# ----------------------------
+
+cov_matrix = returns_df.cov()
+print("Covariance Matrix:")
+print(cov_matrix)
+
+# ----------------------------
+# Step 3D: Compute Portfolio Variance & Volatility
+# ----------------------------
+
+portfolio_variance = np.dot(weights.T, np.dot(cov_matrix.values, weights))
+portfolio_volatility = np.sqrt(portfolio_variance)
+
+# Optional: annualize volatility
+annual_volatility = portfolio_volatility * np.sqrt(252)
+
+print("Portfolio Variance:", portfolio_variance)
+print("Portfolio Volatility (daily):", portfolio_volatility)
+print("Portfolio Volatility (annualized):", annual_volatility)
