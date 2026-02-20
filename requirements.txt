@@ -13,6 +13,7 @@ arize-phoenix #==7.0.0
 openai #==1.54.5
 httpx<0.28
 openinference-instrumentation-openai #==0.1.18
+pyarrow
 
 
 sqlalchemy==2.0.36
