@@ -365,3 +365,126 @@ else:
     risk_status = "Portfolio risk is ALIGNED with the selected profile."
 
 print("Risk Evaluation:", risk_status)
+
+# STEP 5 — Portfolio Structure Analysis (Detailed)
+
+# This step answers:
+
+# Where is the money actually invested?
+
+# Is it concentrated?
+
+# Is it diversified?
+
+# Is it aligned with the user's risk profile?
+
+# What should be adjusted?
+
+# This step is still deterministic math (no LLM yet).
+
+# STEP 5A — Sector Allocation
+# What This Does
+
+# It groups portfolio weights by sector.
+
+# If AAPL 20% + MSFT 15%
+# → Technology = 35%
+
+sector_exposure = con.execute("""
+    SELECT 
+        m.sector,
+        SUM(p.weight) as sector_weight
+    FROM portfolio p
+    JOIN asset_metadata m
+    ON p.asset = m.asset
+    GROUP BY m.sector
+    ORDER BY sector_weight DESC
+""").fetchdf()
+
+print("Sector Exposure")
+print(sector_exposure)
+
+# This tells us:
+
+# How much is in:
+
+# Equity
+
+# Bonds
+
+# Commodities
+
+# Real Estate
+asset_class_exposure = con.execute("""
+    SELECT 
+        m.asset_class,
+        SUM(p.weight) as class_weight
+    FROM portfolio p
+    JOIN asset_metadata m
+    ON p.asset = m.asset
+    GROUP BY m.asset_class
+    ORDER BY class_weight DESC
+""").fetchdf()
+
+print("Asset Class Exposure")
+print(asset_class_exposure)
+
+#STEP 5C — Concentration Risk
+
+#Largest Holding
+largest_weight = weights_df["weight"].max()
+print("Largest Single Position:", largest_weight)
+
+top3_weight = weights_df.sort_values("weight", ascending=False)["weight"].head(3).sum()
+print("Top 3 Concentration:", top3_weight)
+
+hhi = np.sum(weights ** 2)
+print("HHI:", hhi)
+
+# | HHI Value | Meaning          |
+# | --------- | ---------------- |
+# | < 0.10    | Very diversified |
+# | 0.10–0.18 | Moderate         |
+# | > 0.18    | Concentrated     |
+
+# STEP 5D — Check Alignment With Risk Profile
+ideal_allocations = {
+    "Conservative": {"Equity": (0.0, 0.4)},
+    "Moderate": {"Equity": (0.4, 0.7)},
+    "Aggressive": {"Equity": (0.7, 1.0)}
+}
+#Check Equity Exposure
+equity_weight = asset_class_exposure.loc[
+    asset_class_exposure["asset_class"] == "Equity",
+    "class_weight"
+].values[0]
+
+low, high = ideal_allocations[user_risk_profile]["Equity"]
+
+if equity_weight < low:
+    equity_alignment = "Underweight Equity"
+elif equity_weight > high:
+    equity_alignment = "Overweight Equity"
+else:
+    equity_alignment = "Equity Allocation OK"
+
+print(equity_alignment)
+#STEP 5E — Detect Overweight Sectors
+overweight_sectors = sector_exposure[
+    sector_exposure["sector_weight"] > 0.35
+]
+
+if not overweight_sectors.empty:
+    print("Overweight sectors detected:")
+    print(overweight_sectors)
+
+if equity_alignment == "Overweight Equity":
+    print("Suggestion: Reduce equity exposure and increase bonds.")
+
+if largest_weight > 0.25:
+    print("Suggestion: Reduce largest position to below 25%.")
+
+
+
+
+
